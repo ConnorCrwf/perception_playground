@@ -1,0 +1,9 @@
+<launch>
+  <node type="point_cloud_assembler" pkg="laser_assembler"
+        name="my_assembler">
+    <remap from="cloud" to="/wombot_gen2proto/seal_cameras/left_camera/depth/color/points"/>
+    <param name="max_clouds" type="int" value="400" />
+    <param name="fixed_frame" type="string" value="base_frame" />
+    <!-- or left_camera_depth_optical_frame -->
+  </node>
+</launch>
