@@ -18,7 +18,7 @@
 #include <map>
 #include <functional>
 
-#include "../include/my_pcl_tutorial/stb_easy_font.h"
+#include "../include/perception_playground/stb_easy_font.h"
 
 #ifndef PI
 #define PI  3.14159265358979323846

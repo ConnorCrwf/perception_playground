@@ -144,6 +144,7 @@ include_directories(
 
 add_executable(example_voxelgrid src/example_voxelgrid.cpp)
 add_executable(example_planarsegmentation src/example_planarsegmentation.cpp)
+# add_executable(pcl_processing src/pcl_processing.cpp)
 
 
 ## Rename C++ executable without prefix
@@ -159,6 +160,8 @@ add_executable(example_planarsegmentation src/example_planarsegmentation.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(example_voxelgrid ${catkin_LIBRARIES})
 target_link_libraries(example_planarsegmentation ${catkin_LIBRARIES})
+# target_link_libraries(pcl_processing ${catkin_LIBRARIES})
+
 
 
 add_executable(raw_record src/raw_record.cpp)
