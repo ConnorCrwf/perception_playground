@@ -2,7 +2,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <vision_msgs/Detection2DArray.h>
+// #include <vision_msgs/Detection2DArray.h>
 
 //no file-specific header necessary. everything is declaread and defined here. not great practice
 
@@ -30,6 +30,7 @@ typedef Cloud::Ptr CloudPtr;
 
 // if true, we will publish the FoV and bounding box pointclouds
 bool debug_pcl;
+float z_max;
 std::chrono::high_resolution_clock debug_clock_;
 
 // the optical frame of the RGB camera (not the link frame)
@@ -41,6 +42,7 @@ ros::NodeHandle *nh;
 
 // Publishers
 //for publishing filtered output whether that be a pointcloud or a different message type
+ros::Publisher filtered_pcl_pub_;
 
 // Initialize transform listener 
 // TODO ask Chris what this is
@@ -141,7 +143,9 @@ CloudPtr filterPointsInFoV(const CloudPtr input,
 
     for (int i = 0; i < pixel_coordinates.size(); ++i)
     {
+        // TODO verify Z is what is in front of the camera
         if (pixel_coordinates[i].z > 0 &&
+            pixel_coordinates[i].z < z_max &&   //Connor added
             pixel_coordinates[i].x >= 0 &&
             pixel_coordinates[i].x <= width &&
             pixel_coordinates[i].y >= 0 &&
@@ -219,6 +223,7 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     CloudPtr cloud(new Cloud);
     pcl::fromROSMsg(input_cloud, *cloud);
 
+    //TODO: ask Chris what these are
     // remove NaN points from the cloud
     CloudPtr cloud_nan_filtered(new Cloud);
     CloudPtr nanfiltered_cloud(new Cloud);
@@ -247,6 +252,8 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     // output
     //initiliaze a custom message and add values to some of its fields
 
+    //TODO Ask Chris why this conversion is done twice. and why it's after the filtered_pcl_pub is published?
+    // I'm current not doing anything with pixel_coordinates_fov. Should I be?
     // produce pixel-space coordinates
     const std::vector<PixelCoords> pixel_coordinates_fov = convertCloudToPixelCoords(cloud_fov, camera_info_);
 
@@ -273,21 +280,24 @@ int main (int argc, char** argv)
     ros::init(argc,argv,"pcl_processing");
     nh = new ros::NodeHandle("~");
 
-    // if (argc != 2)
-    // {
-    //     ROS_INFO("usage: rosrun perception_playground pcl_processing ...");
-    //     return 1;
-    // }
+    if (argc != 2)
+    {
+        ROS_INFO("usage: rosrun perception_playground pcl_processing rgb_optical_frame");
+        return 1;
+    }
 
     rgb_optical_frame_ = std::string(argv[1]);
 
     nh->param("debug_pcl", debug_pcl, {true});
+    nh->param("z_max", z_max, {1.0});
 
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(tf_buffer_);
 
     // Initialize subscribers to darknet detection and pointcloud
     ros::Subscriber cloud_sub = nh->subscribe<sensor_msgs::PointCloud2>("pointcloud", 10, pointCloudCb);
+    // ros::Subscriber cloud_sub = nh->subscribe<sensor_msgs::PointCloud2>("/seal_cameras/left_camera/depth/color/points", 10, pointCloudCb);
     ros::Subscriber camera_info_sub = nh->subscribe<sensor_msgs::CameraInfo>("camera_info", 100, cameraInfoCb);
+    // ros::Subscriber camera_info_sub = nh->subscribe<sensor_msgs::CameraInfo>("/seal_cameras/left_camera/color/camera_info", 100, cameraInfoCb);
 
     // Create a ROS publisher for the output point cloud
 
