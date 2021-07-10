@@ -8,7 +8,7 @@
         name="pcl_processing" args="$(arg rgb_optical_frame)">
     <remap from="~pointcloud" to="/seal_cameras/left_camera/depth/color/points"/>
     <remap from="~camera_info" to="/seal_cameras/left_camera/color/camera_info"/>
-    <param name="z_max" type="double" value="0.33" />
+    <param name="z_min" type="double" value="0.1" />
     <!-- TODO what is difference between private param and regular param and what is best practice? -->
     <!-- <param name="fixed_frame" type="string" value="base_frame" /> -->
   </node>
