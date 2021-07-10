@@ -1,4 +1,8 @@
 Panels:
+# TODO
+#  - add another Pointcloud for raw Pointcloud
+#  - change size to 1 and color to just intensity
+# -  change starting orientation
   - Class: rviz/Displays
     Help Height: 78
     Name: Displays

@@ -2,6 +2,7 @@
 
   <arg name="rgb_optical_frame"           default="left_camera_color_optical_frame"/>
   <arg name="rviz"           default="true"/>
+  <arg name="play"           default="true"/>
 
   <node type="pcl_processing" pkg="perception_playground"
         name="pcl_processing" args="$(arg rgb_optical_frame)">
@@ -13,5 +14,23 @@
   </node>
 
   <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find perception_playground)/cfg/cfg1.rviz"/>
+
+  <node if="$(arg play)"
+    pkg="rosbag" 
+    type="play" 
+    name="rosbag_play1" 
+    respawn="true" 
+    output="screen" 
+    args="--clock --loop $(find perception_playground)/bags/rosbag_record/mockup_ea_caminfo_june21_2021-07-06-19-24-50.bag"
+  />
+
+  <node if="$(arg play)"
+    pkg="rosbag" 
+    type="play" 
+    name="rosbag_play2" 
+    respawn="true" 
+    output="screen" 
+    args="--clock --loop $(find perception_playground)/bags/rosbag_record/mockup_ea_june21.bag"
+  />
 
 </launch>

@@ -144,6 +144,7 @@ CloudPtr filterPointsInFoV(const CloudPtr input,
     for (int i = 0; i < pixel_coordinates.size(); ++i)
     {
         // TODO verify Z is what is in front of the camera
+        // if it's opticla frame, Z is in front postive, x is positive right, y is positive is down (same as u,v)
         if (pixel_coordinates[i].z > 0 &&
             pixel_coordinates[i].z < z_max &&   //Connor added
             pixel_coordinates[i].x >= 0 &&
@@ -224,6 +225,7 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     pcl::fromROSMsg(input_cloud, *cloud);
 
     //TODO: ask Chris what these are
+    // filters out any of the garbage in the pointcloud
     // remove NaN points from the cloud
     CloudPtr cloud_nan_filtered(new Cloud);
     CloudPtr nanfiltered_cloud(new Cloud);
@@ -253,6 +255,7 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     //initiliaze a custom message and add values to some of its fields
 
     //TODO Ask Chris why this conversion is done twice. and why it's after the filtered_pcl_pub is published?
+    // one he filters down fov and one he filters down bounding box
     // I'm current not doing anything with pixel_coordinates_fov. Should I be?
     // produce pixel-space coordinates
     const std::vector<PixelCoords> pixel_coordinates_fov = convertCloudToPixelCoords(cloud_fov, camera_info_);
@@ -291,6 +294,7 @@ int main (int argc, char** argv)
     nh->param("debug_pcl", debug_pcl, {true});
     nh->param("z_max", z_max, {1.0});
 
+    //wierd blake stuff that might be useful
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(tf_buffer_);
 
     // Initialize subscribers to darknet detection and pointcloud
@@ -302,6 +306,7 @@ int main (int argc, char** argv)
     // Create a ROS publisher for the output point cloud
 
 
+    // this only initializes it. could also do it in the constructor
     if (debug_pcl) {
         filtered_pcl_pub_ = nh->advertise<sensor_msgs::PointCloud2>("filtered_pcl", 1);
     }
