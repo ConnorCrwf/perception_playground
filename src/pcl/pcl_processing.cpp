@@ -33,6 +33,7 @@ typedef Cloud::Ptr CloudPtr;
 // if true, we will publish the FoV and bounding box pointclouds
 bool debug_pcl;
 float z_min;
+float z_max;
 std::chrono::high_resolution_clock debug_clock_;
 
 // the optical frame of the RGB camera (not the link frame)
@@ -56,10 +57,10 @@ tf2_ros::Buffer tf_buffer_;
 
 // caches for callback data
 // vision_msgs::BoundingBox2D current_box_;
-int box_xmin;
-int box_xmax;
-int box_ymin;
-int box_ymax;
+int box_xmin_;
+int box_xmax_;
+int box_ymin_;
+int box_ymax_;
 
 sensor_msgs::CameraInfo camera_info_;
 
@@ -81,10 +82,16 @@ void bBoxCb(const vision_msgs::BoundingBox2DConstPtr& msg)
     // current_box_ = *msg;
     geometry_msgs::Pose2D center;
     center = (*msg).center;
-    box_xmin = center.x - (*msg).size_x/2;   // or could use ->
-    box_xmax = center.x + (*msg).size_x/2;
-    box_ymin = center.y - (*msg).size_y/2;
-    box_ymin = center.y + (*msg).size_y/2;
+    box_xmin_ = center.x - (*msg).size_x/2;   // or could use ->
+    box_xmax_ = center.x + (*msg).size_x/2;
+    box_ymin_ = center.y - (*msg).size_y/2;
+    box_ymax_ = center.y + (*msg).size_y/2;
+    
+    // dummy values
+    box_xmin_ = 0;
+    box_xmax_ = 640;
+    box_ymin_ = 0;
+    box_ymax_ = 480;
 }
 
 
@@ -176,7 +183,7 @@ CloudPtr filterPointsMinZ(const CloudPtr input,
         // TODO verify Z is what is in front of the camera
         // if it's opticla frame, Z is in front postive, x is positive right, y is positive is down (same as u,v)
         if (pixel_coordinates[i].z > z_min &&
-            // pixel_coordinates[i].z < z_max &&   //Connor added
+            pixel_coordinates[i].z < z_max &&   //Connor added
             pixel_coordinates[i].x >= 0 &&
             pixel_coordinates[i].x <= width &&
             pixel_coordinates[i].y >= 0 &&
@@ -339,10 +346,10 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     // ----------------------Extract points in the bounding box-----------
     const CloudPtr cloud_in_bbox = filterPointsInBox(cloud_fov,
                                                         pixel_coordinates,
-                                                        box_xmin,
-                                                        box_xmax,
-                                                        box_ymin,
-                                                        box_ymax);
+                                                        box_xmin_,
+                                                        box_xmax_,
+                                                        box_ymin_,
+                                                        box_ymax_);
 
     if (debug_pcl)
     {
@@ -394,7 +401,8 @@ int main (int argc, char** argv)
 
     //TODO ask why these are done this way and not with ros::param?
     nh->param("debug_pcl", debug_pcl, {true});
-    nh->param("z_min", z_min, {1.0});
+    nh->param("z_min", z_min, {0.20});
+    nh->param("z_max", z_max, {0.40});
 
     //wierd blake stuff that might be useful
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(tf_buffer_);
@@ -407,7 +415,7 @@ int main (int argc, char** argv)
 
     // Create a ROS publisher for the output point cloud
     filtered_pcl_pub_ = nh->advertise<sensor_msgs::PointCloud2>("filtered_pcl", 1);
-    seal_edge_bbox_pub_ = nh->advertise<sensor_msgs::PointCloud2>("seal_edge_bbox_pub", 1);
+    seal_edge_bbox_pub_ = nh->advertise<sensor_msgs::PointCloud2>("seal_edge_bbox", 1);
         
     ros::spin();
 
