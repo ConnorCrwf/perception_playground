@@ -7,9 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1/Tree1
-        - /TF1/Tree1/left_camera_link1
-        - /TF1/Tree1/left_camera_link1/left_camera_color_frame1
-        - /TF1/Tree1/left_camera_link1/left_camera_depth_frame1
       Splitter Ratio: 0.5
     Tree Height: 519
   - Class: rviz/Selection
@@ -68,7 +65,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -83,7 +80,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -124,7 +121,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -135,11 +132,11 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /pcl_processing/seal_edge_bbox_pub
+      Topic: /pcl_processing/seal_edge_bbox
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15

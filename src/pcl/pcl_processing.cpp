@@ -57,10 +57,10 @@ tf2_ros::Buffer tf_buffer_;
 
 // caches for callback data
 // vision_msgs::BoundingBox2D current_box_;
-int box_xmin_;
-int box_xmax_;
-int box_ymin_;
-int box_ymax_;
+int box_xmin_ = 0;
+int box_xmax_ = 640;
+int box_ymin_ = 180;
+int box_ymax_ = 230;
 
 sensor_msgs::CameraInfo camera_info_;
 
@@ -82,10 +82,10 @@ void bBoxCb(const vision_msgs::BoundingBox2DConstPtr& msg)
     // current_box_ = *msg;
     geometry_msgs::Pose2D center;
     center = (*msg).center;
-    box_xmin_ = center.x - (*msg).size_x/2;   // or could use ->
-    box_xmax_ = center.x + (*msg).size_x/2;
-    box_ymin_ = center.y - (*msg).size_y/2;
-    box_ymax_ = center.y + (*msg).size_y/2;
+    // box_xmin_ = center.x - (*msg).size_x/2;   // or could use ->
+    // box_xmax_ = center.x + (*msg).size_x/2;
+    // box_ymin_ = center.y - (*msg).size_y/2;
+    // box_ymax_ = center.y + (*msg).size_y/2;
     
     // dummy values
     box_xmin_ = 0;
@@ -170,24 +170,25 @@ std::vector<PixelCoords> convertCloudToPixelCoords(const CloudPtr cloud,
  * @param width The pixel width of the camera
  * @return A pointcloud containing only the points within the camera FoV.
  */
-CloudPtr filterPointsMinZ(const CloudPtr input,
-                           const std::vector<PixelCoords> &pixel_coordinates,
+CloudPtr filterPointsZ(const CloudPtr input, 
                            const int height,
                            const int width)
 {
+    //instead of passing in input that way could also use const pcl::PointCloud<PointType> &input. Then you wouldn't use ->
+    //would also need to pass in cloud as a pointer *cloud_nan_filtered instead of cloud_nan_filtered
     pcl::PointIndices::Ptr indices_in_fov(new pcl::PointIndices());
     indices_in_fov->indices.reserve(input->size());
 
-    for (int i = 0; i < pixel_coordinates.size(); ++i)
+    for (int i = 0; i < input->size(); ++i)
     {
         // TODO verify Z is what is in front of the camera
         // if it's opticla frame, Z is in front postive, x is positive right, y is positive is down (same as u,v)
-        if (pixel_coordinates[i].z > z_min &&
-            pixel_coordinates[i].z < z_max &&   //Connor added
-            pixel_coordinates[i].x >= 0 &&
-            pixel_coordinates[i].x <= width &&
-            pixel_coordinates[i].y >= 0 &&
-            pixel_coordinates[i].y <= height)
+        if (input->points[i].z > z_min &&
+            input->points[i].z < z_max &&   //Connor added
+            input->points[i].x >= 0 &&
+            input->points[i].x <= width &&
+            input->points[i].y >= 0 &&
+            input->points[i].y <= height)
         {
             indices_in_fov->indices.push_back(i);
         }
@@ -223,14 +224,14 @@ CloudPtr filterPointsInBox(const CloudPtr input,
                            const int ymin,
                            const int ymax)
 {
-    auto t1 = debug_clock_.now();
+    // auto t1 = debug_clock_.now();
     pcl::PointIndices::Ptr indices_in_bbox(new pcl::PointIndices());
     indices_in_bbox->indices.reserve(input->size());
 
 
     for (int i = 0; i < pixel_coordinates.size(); ++i)
     {
-        if (pixel_coordinates[i].z > 0 &&
+        if ( pixel_coordinates[i].z > 0 &&
             pixel_coordinates[i].x > xmin &&
             pixel_coordinates[i].x < xmax &&
             pixel_coordinates[i].y > ymin &&
@@ -248,9 +249,9 @@ CloudPtr filterPointsInBox(const CloudPtr input,
     bbox_filter.setIndices(indices_in_bbox);
     bbox_filter.setNegative(false);
     bbox_filter.filter(*cloud_in_bbox);
-    auto t2 = debug_clock_.now();
+    // auto t2 = debug_clock_.now();
     // if (std::chrono::duration_cast<std::chrono::milliseconds>(t2- t1).count() > 1) {
-        ROS_ERROR_STREAM("TIME FILTER POINTS IN BOX: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2- t1).count());
+        // ROS_ERROR_STREAM("TIME FILTER POINTS IN BOX: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2- t1).count());
     // }
     return cloud_in_bbox;
 }
@@ -286,7 +287,7 @@ bool transformPointCloud2(sensor_msgs::PointCloud2 &pointcloud,
  */
 void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
 {
-    auto t1 = debug_clock_.now();
+    // auto t1 = debug_clock_.now();
     // check that we've received bounding boxes
     // TODO not sure how to do that with BoundingBox2D ROS msg
     // if (current_box_.empty())
@@ -323,11 +324,8 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     std::vector<int> rindices;
     pcl::removeNaNFromPointCloud(*cloud, *cloud_nan_filtered, rindices);
 
-    // produce pixel-space coordinates
-    const std::vector<PixelCoords> pixel_coordinates = convertCloudToPixelCoords(cloud_nan_filtered, camera_info_);
-
     // -------------------Extraction of points in the camera FOV------------------------------
-    const CloudPtr cloud_fov = filterPointsMinZ(cloud_nan_filtered, pixel_coordinates, camera_info_.height, camera_info_.width);
+    const CloudPtr cloud_fov = filterPointsZ(cloud_nan_filtered, camera_info_.height, camera_info_.width);
 
     if (cloud_fov->empty())
     {
@@ -342,9 +340,12 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
         filtered_pcl_pub_.publish(pc2);
     }
 
+    // produce pixel-space coordinates
+    const std::vector<PixelCoords> pixel_coordinates = convertCloudToPixelCoords(cloud, camera_info_);
+
           
     // ----------------------Extract points in the bounding box-----------
-    const CloudPtr cloud_in_bbox = filterPointsInBox(cloud_fov,
+    const CloudPtr cloud_in_bbox = filterPointsInBox(cloud,
                                                         pixel_coordinates,
                                                         box_xmin_,
                                                         box_xmax_,
@@ -377,9 +378,9 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     // TODO do I publish here or in the main
     // refer to original code. could be two different topics I'm thinking about
  
-    auto t2 = debug_clock_.now();
+    // auto t2 = debug_clock_.now();
     
-    ROS_ERROR_STREAM("TIME PC CB: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2- t1).count());
+    // ROS_ERROR_STREAM("TIME PC CB: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2- t1).count());
 
 }
 
@@ -402,16 +403,17 @@ int main (int argc, char** argv)
     //TODO ask why these are done this way and not with ros::param?
     nh->param("debug_pcl", debug_pcl, {true});
     nh->param("z_min", z_min, {0.20});
-    nh->param("z_max", z_max, {0.40});
+    nh->param("z_max", z_max, {0.32});
 
     //wierd blake stuff that might be useful
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(tf_buffer_);
 
-    // Initialize subscribers to darknet detection and pointcloud
-    ros::Subscriber cloud_sub = nh->subscribe<sensor_msgs::PointCloud2>("pointcloud", 10, pointCloudCb);
-    // ros::Subscriber cloud_sub = nh->subscribe<sensor_msgs::PointCloud2>("/seal_cameras/left_camera/depth/color/points", 10, pointCloudCb);
-    ros::Subscriber camera_info_sub = nh->subscribe<sensor_msgs::CameraInfo>("camera_info", 100, cameraInfoCb);
-    // ros::Subscriber camera_info_sub = nh->subscribe<sensor_msgs::CameraInfo>("/seal_cameras/left_camera/color/camera_info", 100, cameraInfoCb);
+    // Initialize subscribers 
+    //hard topic callouts commented for debugging when can't pass in topic remaps
+    // ros::Subscriber cloud_sub = nh->subscribe<sensor_msgs::PointCloud2>("pointcloud", 10, pointCloudCb);
+    ros::Subscriber cloud_sub = nh->subscribe<sensor_msgs::PointCloud2>("/seal_cameras/left_camera/depth/color/points", 10, pointCloudCb);
+    // ros::Subscriber camera_info_sub = nh->subscribe<sensor_msgs::CameraInfo>("camera_info", 100, cameraInfoCb);
+    ros::Subscriber camera_info_sub = nh->subscribe<sensor_msgs::CameraInfo>("/seal_cameras/left_camera/color/camera_info", 100, cameraInfoCb);
 
     // Create a ROS publisher for the output point cloud
     filtered_pcl_pub_ = nh->advertise<sensor_msgs::PointCloud2>("filtered_pcl", 1);

@@ -50,6 +50,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/perception_playground.cpp
@@ -79,6 +80,14 @@ add_executable(pcl_processing src/pcl/pcl_processing.cpp)
 target_link_libraries(example_voxelgrid ${catkin_LIBRARIES})
 target_link_libraries(example_planarsegmentation ${catkin_LIBRARIES})
 target_link_libraries(pcl_processing ${catkin_LIBRARIES})
+
+# set up package for debugging with VSCode
+set(CMAKE_BUILD_TYPE Debug)           # this version disables compiler optimization or use below
+target_compile_options(pcl_processing PRIVATE -g -O0)        # add this line to debug with optimizations disabled
+# set(CMAKE_BUILD_TYPE RelWithDebInfo)  # this version keeps compiler optimization
+# target_compile_options(pcl_processing PRICATE -g)            # add this line to debug with optimizations enabled
+
+
 
 
 add_executable(raw_record src/record/raw_record.cpp)
