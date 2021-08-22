@@ -256,7 +256,7 @@ CloudPtr filterPointsInBox(const CloudPtr input,
     return cloud_in_bbox;
 }
 
-
+//just because it says it takes a reference to a variable, you still just pass in that variable and it knows what to do
 bool transformPointCloud2(sensor_msgs::PointCloud2 &pointcloud,
                           const std::string target_frame)
 {
@@ -320,7 +320,6 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     // filters out any of the garbage in the pointcloud
     // remove NaN points from the cloud
     CloudPtr cloud_nan_filtered(new Cloud);
-    CloudPtr nanfiltered_cloud(new Cloud);
     std::vector<int> rindices;
     pcl::removeNaNFromPointCloud(*cloud, *cloud_nan_filtered, rindices);
 
@@ -362,10 +361,11 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     // ----------------------Compute centroid-----------------------------
     Eigen::Vector4f centroid_out;
     pcl::compute3DCentroid(*cloud_in_bbox, centroid_out); 
+    std::cout<<"Centroid X value is "<<centroid_out[0]<<"\n Centroid Y value is: "<<centroid_out[1]<<"\n Centroid Z value is: "<<centroid_out[2]<<std::endl; 
     // centroid_out[0];
     // centroid_out[1];
     // centroid_out[2];
-
+    
     // output
     //initiliaze a custom message and add values to some of its fields
 

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="wombot_camera">
+
+	<xacro:macro name="wombot_camera" params="camera_prefix camera_thickness camera_width camera_height *joint_pose">
+		<link name="${camera_prefix}_link">
+			<visual>
+			<!-- this origin xyz and rpy gets overwritten from values passed in from wombot.urdf.xacro -->
+				<origin xyz="0 0 0" rpy="0 0 0" />
+				<geometry>
+                    <box size="${camera_thickness} ${camera_width} ${camera_height}"/>
+				</geometry>
+				<material name="color4">
+					<color rgba="0.85 0.55 0.85 1"/>
+				</material>
+			</visual>
+		</link>
+
+		<joint name="${camera_prefix}_joint" type="fixed">
+			<parent link="base_link"/>
+			<child link="${camera_prefix}_link"/>
+			<xacro:insert_block name="joint_pose"/>
+			<axis xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+
+	</xacro:macro>
+</robot>

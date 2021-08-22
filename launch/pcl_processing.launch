@@ -7,7 +7,7 @@
 
   <!-- rosrun perception_playground pcl_processing left_camera_color_optical_frame ~pointcloud:=/seal_cameras/left_camera/depth/color/points ~camera_info=/seal_cameras/left_camera/color/camera_info _z_min:=0.25 _z_max:=0.32 -->
   <node unless="$(arg debug_pcl)" type="pcl_processing" pkg="perception_playground"
-        name="pcl_processing" args="$(arg rgb_optical_frame)">
+        name="pcl_processing" args="$(arg rgb_optical_frame)" output="screen">
     <remap from="~pointcloud" to="/seal_cameras/left_camera/depth/color/points"/>
     <remap from="~camera_info" to="/seal_cameras/left_camera/color/camera_info"/>
     <param name="z_min" type="double" value="0.25" />
@@ -23,17 +23,19 @@
     type="play" 
     name="rosbag_play1" 
     respawn="true" 
-    output="screen" 
     args="--clock --loop $(find perception_playground)/bags/rosbag_record/mockup_ea_caminfo_june21_2021-07-06-19-24-50.bag"
   />
+  <!-- output="screen"  -->
 
   <node if="$(arg play)"
     pkg="rosbag" 
     type="play" 
     name="rosbag_play2" 
     respawn="true" 
-    output="screen" 
     args="--clock --loop $(find perception_playground)/bags/rosbag_record/mockup_ea_june21.bag"
   />
+
+  <include if="$(arg play)" file="$(find perception_playground)/launch/transform.launch">
+  </include>
 
 </launch>

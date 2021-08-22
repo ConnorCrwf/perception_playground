@@ -14,6 +14,11 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   cv_bridge
+
+  rviz
+  robot_state_publisher
+  joint_state_publisher
+  urdf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -35,7 +40,8 @@ find_package(realsense2)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES perception_playground
-#  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs
+   CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs 
+   rviz robot_state_publisher joint_state_publisher urdf
 #  DEPENDS system_lib
 )
 
