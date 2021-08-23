@@ -94,6 +94,14 @@
     <child link="base_footprint" />
   </joint>
 
+  <link name="floor"/>
+
+  <joint name="floor_joint" type="fixed">
+    <origin xyz="0 0 -0.02085" rpy="0 0 0" />
+    <parent link="left_camera_link" />
+    <child link="floor" />
+  </joint>
+
   <!-- Inertial link stores the robot's inertial information -->
   <link name="inertial_link">
     <inertial>

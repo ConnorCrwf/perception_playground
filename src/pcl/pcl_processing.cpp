@@ -40,6 +40,7 @@ std::chrono::high_resolution_clock debug_clock_;
 // can view available frames on /tf or /tf_static topics
 // this partiuclar one is left_camera_color_optical_frame
 std::string rgb_optical_frame_;
+std::string floor_frame_;
 
 // ROS Nodehandle
 ros::NodeHandle *nh;
@@ -49,6 +50,7 @@ ros::NodeHandle *nh;
 //TODO change this to zmin_filter_pcl_pub
 ros::Publisher filtered_pcl_pub_;
 ros::Publisher seal_edge_bbox_pub_;
+ros::Publisher single_point_pub_;
 
 // Initialize transform listener 
 // TODO ask Chris what this is
@@ -199,6 +201,7 @@ CloudPtr filterPointsZ(const CloudPtr input,
 
     // Extract the inliers  of the ROI
     camera_fov_filter.setInputCloud(input);
+    //this is what applies the indices found above to the new cloud
     camera_fov_filter.setIndices(indices_in_fov);
     camera_fov_filter.setNegative(false);
     camera_fov_filter.filter(*cloud_in_fov);
@@ -359,12 +362,40 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     }
 
     // ----------------------Compute centroid-----------------------------
+    //TODO why is it 4f and not 3f?
     Eigen::Vector4f centroid_out;
     pcl::compute3DCentroid(*cloud_in_bbox, centroid_out); 
-    std::cout<<"Centroid X value is "<<centroid_out[0]<<"\n Centroid Y value is: "<<centroid_out[1]<<"\n Centroid Z value is: "<<centroid_out[2]<<std::endl; 
+    // std::cout<<"Centroid X value is "<<centroid_out[0]<<"\n Centroid Y value is: "<<centroid_out[1]<<"\n Centroid Z value is: "<<centroid_out[2]<<std::endl; 
+    std::cout<<"Gap Measurement is "<<-centroid_out[1]<<"m and "<<-centroid_out[1]*39.3701<<" inches\n"<<std::endl; 
     // centroid_out[0];
     // centroid_out[1];
     // centroid_out[2];
+
+    //PCL method. if this doesn't work, then try the method of using pointers like the line below
+    // const CloudPtr cloud_single_point;
+    pcl::PointCloud<pcl::PointXYZ> cloud_single_point;
+    pcl::PointXYZ newPoint;
+    newPoint.x = centroid_out[2];
+    newPoint.y = -centroid_out[0];
+    newPoint.z = -centroid_out[1];
+    cloud_single_point.points.push_back(newPoint);
+
+    if (debug_pcl)
+    {
+        sensor_msgs::PointCloud2 pc2a;
+        pcl::toROSMsg(cloud_single_point, pc2a);
+        pc2a.header.frame_id = "left_camera_link";
+        pc2a.header.stamp = ros::Time();
+        if (tf2::getFrameId(pc2a) != floor_frame_)
+        {   
+            //TODO fix this transform so I don't have to manually do it above
+            if (!transformPointCloud2(pc2a, floor_frame_))
+            {
+                ROS_WARN("No need for Transform.");
+            }  
+    }
+        single_point_pub_.publish(pc2a);
+    }
     
     // output
     //initiliaze a custom message and add values to some of its fields
@@ -392,13 +423,14 @@ int main (int argc, char** argv)
     ros::init(argc,argv,"pcl_processing");
     nh = new ros::NodeHandle("~");
 
-    if (argc != 2)
+    if (argc != 3)
     {
         ROS_INFO("usage: rosrun perception_playground pcl_processing rgb_optical_frame");
         return 1;
     }
 
     rgb_optical_frame_ = std::string(argv[1]);
+    floor_frame_ = std::string(argv[2]);
 
     //TODO ask why these are done this way and not with ros::param?
     nh->param("debug_pcl", debug_pcl, {true});
@@ -418,6 +450,7 @@ int main (int argc, char** argv)
     // Create a ROS publisher for the output point cloud
     filtered_pcl_pub_ = nh->advertise<sensor_msgs::PointCloud2>("filtered_pcl", 1);
     seal_edge_bbox_pub_ = nh->advertise<sensor_msgs::PointCloud2>("seal_edge_bbox", 1);
+    single_point_pub_ = nh->advertise<sensor_msgs::PointCloud2>("single_point", 1);
         
     ros::spin();
 
