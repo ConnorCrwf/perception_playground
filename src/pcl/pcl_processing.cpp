@@ -366,7 +366,7 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     Eigen::Vector4f centroid_out;
     pcl::compute3DCentroid(*cloud_in_bbox, centroid_out); 
     // std::cout<<"Centroid X value is "<<centroid_out[0]<<"\n Centroid Y value is: "<<centroid_out[1]<<"\n Centroid Z value is: "<<centroid_out[2]<<std::endl; 
-    std::cout<<"Gap Measurement is "<<-centroid_out[1]<<"m and "<<-centroid_out[1]*39.3701<<" inches\n"<<std::endl; 
+    // std::cout<<"Gap Measurement is "<<-centroid_out[1]<<"m and "<<-centroid_out[1]*39.3701<<" inches\n"<<std::endl; 
     // centroid_out[0];
     // centroid_out[1];
     // centroid_out[2];
@@ -375,27 +375,48 @@ void pointCloudCb(sensor_msgs::PointCloud2 input_cloud)
     // const CloudPtr cloud_single_point;
     pcl::PointCloud<pcl::PointXYZ> cloud_single_point;
     pcl::PointXYZ newPoint;
-    newPoint.x = centroid_out[2];
-    newPoint.y = -centroid_out[0];
-    newPoint.z = -centroid_out[1];
+    // newPoint.x = centroid_out[2];
+    // newPoint.y = -centroid_out[0];
+    // newPoint.z = -centroid_out[1];
+    newPoint.x = centroid_out[0];
+    newPoint.y = centroid_out[1];
+    newPoint.z = centroid_out[2];
     cloud_single_point.points.push_back(newPoint);
+
+    sensor_msgs::PointCloud2 pc2a;
+    pcl::toROSMsg(cloud_single_point, pc2a);
+    pc2a.header.frame_id = rgb_optical_frame_;
+    pc2a.header.stamp = ros::Time();
+    if (tf2::getFrameId(pc2a) != floor_frame_)
+    {   
+        //TODO fix this transform so I don't have to manually do it above
+        if (!transformPointCloud2(pc2a, floor_frame_))
+        {
+            ROS_WARN("No need for Transform.");
+        }  
+    }
+    single_point_pub_.publish(pc2a);
+
+    // gap_msg = wombot_msgs::GapData();
+    // gap_msg.seq = ;
+    // gap_msg.time = ros::Time::now();
+
+    //read pc2a
+    //iterate over the One point in the sensor message and then std::out to the console
+    //for loop should only go around once
+    for (sensor_msgs::PointCloud2ConstIterator<float> it(pc2a, "x"); it != it.end(); ++it) {
+        // TODO: do something with the values of x, y, z
+        std::cout << "Gap Size is" << ", " << it[2] << " meters or " << it[2]*39.3701 <<" inches \n" ;
+        // gap_msg.gap_size = it[2];
+        // gap_data_pub_.publish(gap_msg);
+    }
 
     if (debug_pcl)
     {
-        sensor_msgs::PointCloud2 pc2a;
-        pcl::toROSMsg(cloud_single_point, pc2a);
-        pc2a.header.frame_id = "left_camera_link";
-        pc2a.header.stamp = ros::Time();
-        if (tf2::getFrameId(pc2a) != floor_frame_)
-        {   
-            //TODO fix this transform so I don't have to manually do it above
-            if (!transformPointCloud2(pc2a, floor_frame_))
-            {
-                ROS_WARN("No need for Transform.");
-            }  
+        
+        
     }
-        single_point_pub_.publish(pc2a);
-    }
+
     
     // output
     //initiliaze a custom message and add values to some of its fields
@@ -451,6 +472,9 @@ int main (int argc, char** argv)
     filtered_pcl_pub_ = nh->advertise<sensor_msgs::PointCloud2>("filtered_pcl", 1);
     seal_edge_bbox_pub_ = nh->advertise<sensor_msgs::PointCloud2>("seal_edge_bbox", 1);
     single_point_pub_ = nh->advertise<sensor_msgs::PointCloud2>("single_point", 1);
+    // Uncomment this after bringing into main repo
+    //remember to do an include above
+    // gap_data_pub_ = nh->advertise<wombot_msgs::GapData>("gap_data", 1);
         
     ros::spin();
 

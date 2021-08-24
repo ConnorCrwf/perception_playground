@@ -30,13 +30,14 @@
 
   <!-- Wheel Mounting Positions -->
   <!-- TODO: Insert real values -->
-  <xacro:property name="wheelbase"		value="0.200" />
-  <xacro:property name="track"			value="0.240" />
-  <xacro:property name="caster_track"			value="0.220" />
+  <xacro:property name="wheelbase"		value="0.2159" />
+  <xacro:property name="track"			value="0.196825" />
+  <xacro:property name="caster_track"			value="0.196825" />
   <xacro:property name="ground_clearance"	value="0.00635" />
   <xacro:property name="front_axle_x_offset"	value="0.09" />
-  <xacro:property name="caster_wheel_vertical_offset"	value="0.015" />
-  <xacro:property name="rear_axle_x_offset"	value="-0.09" />
+    <xacro:property name="rear_axle_x_offset"	value="-0.09" />
+  <!-- <xacro:property name="caster_wheel_vertical_offset"	value="0.015" /> -->
+
 
   <!-- Wheel Properties -->
   <xacro:property name="drive_wheel_length" value="0.03" />
@@ -97,7 +98,9 @@
   <link name="floor"/>
 
   <joint name="floor_joint" type="fixed">
+  <!-- intrinsic meaning it rotates about whatever the nex axes direction is -->
     <origin xyz="0 0 -0.02085" rpy="0 0 0" />
+    <!-- <origin xyz="0 0 -0.02085" rpy="1.57 0 1.57" /> -->
     <parent link="left_camera_link" />
     <child link="floor" />
   </joint>
