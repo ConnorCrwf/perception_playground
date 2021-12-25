@@ -125,3 +125,11 @@ add_executable(my_rs-record-playback src/record/my_rs-record-playback.cpp includ
 set_property(TARGET my_rs-record-playback PROPERTY CXX_STANDARD 11)
 target_link_libraries(my_rs-record-playback PRIVATE realsense2::realsense2 glfw ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${DEPENDENCIES})
 
+# for cluster_extraction
+find_package(PCL 1.2 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+add_executable (cluster_extraction src/pcl/cluster_extraction.cpp)
+target_link_libraries (cluster_extraction ${PCL_LIBRARIES})
